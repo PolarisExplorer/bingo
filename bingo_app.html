@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Bingo 49</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 10px;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 390px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .bingo-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 360px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .number-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            border: 2px solid #333;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+            min-height: 40px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .number-cell:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .number-cell:active {
+            transform: scale(0.95);
+        }
+
+        /* Boje za svaku kolonu */
+        .red { background-color: #ff4444; color: white; }
+        .yellow { background-color: #ffdd44; color: black; }
+        .blue { background-color: #4488ff; color: white; }
+        .orange { background-color: #ff8844; color: white; }
+        .green { background-color: #44aa44; color: white; }
+        .purple { background-color: #aa44aa; color: white; }
+        .black { background-color: #333333; color: white; }
+
+        /* Efekat brisanja */
+        .deleted {
+            background-color: #f0f0f0 !important;
+            color: #ccc !important;
+            text-decoration: line-through;
+            transform: scale(0.8);
+            opacity: 0.5;
+            border-color: #ccc;
+        }
+
+        .deleted:hover {
+            transform: scale(0.8);
+        }
+
+        .reset-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .reset-btn:active {
+            transform: translateY(0);
+        }
+
+        .stats {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #666;
+        }
+
+        .selected-numbers {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .selected-numbers h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .numbers-display {
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            min-height: 60px;
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 10px;
+            word-wrap: break-word;
+        }
+
+        .copy-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .copy-btn:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+
+        .clear-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .clear-btn:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+
+        .copy-success {
+            background: #d4edda !important;
+            border-color: #c3e6cb !important;
+            animation: flash 0.5s ease-in-out;
+        }
+
+        @keyframes flash {
+            0% { background: #28a745; }
+            100% { background: #d4edda; }
+        }
+
+        /* Responsive dizajn za iPhone */
+        @media (max-width: 430px) {
+            .container {
+                margin: 5px;
+                padding: 12px;
+                max-width: calc(100vw - 10px);
+            }
+            
+            .number-cell {
+                font-size: 13px;
+                min-height: 35px;
+            }
+            
+            .bingo-grid {
+                gap: 4px;
+                max-width: 100%;
+            }
+            
+            h1 {
+                font-size: 24px;
+                margin-bottom: 15px;
+            }
+        }
+
+        @media (max-width: 350px) {
+            .number-cell {
+                font-size: 12px;
+                min-height: 32px;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+            
+            .bingo-grid {
+                gap: 3px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 BINGO 49</h1>
+        
+        <div class="stats">
+            <span>Ukupno: <strong id="total">49</strong></span> | 
+            <span>Izabrano: <strong id="selected">0</strong></span>
+        </div>
+        
+        <div class="selected-numbers">
+            <h3>📝 Izabrani brojevi:</h3>
+            <div class="numbers-display" id="numbersDisplay">
+                Ovde će se prikazati brojevi koje izaberete...
+            </div>
+            <button class="copy-btn" onclick="copyNumbers()">📋 KOPIRAJ</button>
+            <button class="clear-btn" onclick="clearSelected()">🗑️ OBRIŠI SVE</button>
+        </div>
+        
+        <div class="bingo-grid" id="bingoGrid">
+            <!-- Brojevi će biti generisani JavaScript-om -->
+        </div>
+        
+        <button class="reset-btn" onclick="resetGame()">
+            🔄 RESETUJ IGRU
+        </button>
+    </div>
+
+    <script>
+        // Definisanje boja za svaku kolonu
+        const colorClasses = [
+            'red',    // 1,8,15,22,29,36,43
+            'yellow', // 2,9,16,23,30,37,44
+            'blue',   // 3,10,17,24,31,38,45
+            'orange', // 4,11,18,25,32,39,46
+            'green',  // 5,12,19,26,33,40,47
+            'purple', // 6,13,20,27,34,41,48
+            'black'   // 7,14,21,28,35,42,49
+        ];
+
+        let deletedNumbers = new Set();
+        let selectedNumbers = new Set();
+
+        function createBingoGrid() {
+            const grid = document.getElementById('bingoGrid');
+            grid.innerHTML = '';
+
+            for (let i = 1; i <= 49; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'number-cell';
+                cell.textContent = i;
+                cell.id = `number-${i}`;
+                
+                // Određuj boju na osnovu broja
+                const colorIndex = (i - 1) % 7;
+                cell.classList.add(colorClasses[colorIndex]);
+                
+                // Dodaj event listener za klik
+                cell.addEventListener('click', function() {
+                    toggleNumber(i, cell);
+                });
+                
+                grid.appendChild(cell);
+            }
+        }
+
+        function toggleNumber(number, cell) {
+            if (selectedNumbers.has(number)) {
+                // Ukloni iz izabranih
+                selectedNumbers.delete(number);
+                cell.classList.remove('deleted');
+            } else {
+                // Dodaj u izabrane
+                selectedNumbers.add(number);
+                cell.classList.add('deleted');
+            }
+            
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            // Ažuriraj statistike
+            document.getElementById('selected').textContent = selectedNumbers.size;
+            document.getElementById('total').textContent = 49 - selectedNumbers.size;
+            
+            // Ažuriraj prikaz izabranih brojeva
+            const display = document.getElementById('numbersDisplay');
+            if (selectedNumbers.size === 0) {
+                display.textContent = 'Ovde će se prikazati brojevi koje izaberete...';
+                display.style.color = '#999';
+            } else {
+                const sortedNumbers = Array.from(selectedNumbers).sort((a, b) => a - b);
+                display.textContent = sortedNumbers.join(', ');
+                display.style.color = '#333';
+            }
+        }
+
+        function copyNumbers() {
+            const display = document.getElementById('numbersDisplay');
+            const copyBtn = document.querySelector('.copy-btn');
+            
+            if (selectedNumbers.size === 0) {
+                alert('Nema brojeva za kopiranje!');
+                return;
+            }
+            
+            const sortedNumbers = Array.from(selectedNumbers).sort((a, b) => a - b);
+            const numbersText = sortedNumbers.join(', ');
+            
+            // Pokušaj kopiranje u clipboard
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(numbersText).then(() => {
+                    showCopySuccess(copyBtn);
+                }).catch(() => {
+                    fallbackCopy(numbersText, copyBtn);
+                });
+            } else {
+                fallbackCopy(numbersText, copyBtn);
+            }
+        }
+
+        function fallbackCopy(text, btn) {
+            // Fallback metoda za starije browsere
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showCopySuccess(btn);
+            } catch (err) {
+                alert('Greška pri kopiranju. Brojevi: ' + text);
+            }
+            
+            document.body.removeChild(textArea);
+        }
+
+        function showCopySuccess(btn) {
+            const originalText = btn.textContent;
+            btn.textContent = '✅ KOPIRANO!';
+            btn.classList.add('copy-success');
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.classList.remove('copy-success');
+            }, 2000);
+        }
+
+        function clearSelected() {
+            if (selectedNumbers.size === 0) {
+                return;
+            }
+            
+            if (confirm('Da li ste sigurni da želite da obrišete sve izabrane brojeve?')) {
+                selectedNumbers.clear();
+                const cells = document.querySelectorAll('.number-cell');
+                cells.forEach(cell => {
+                    cell.classList.remove('deleted');
+                });
+                updateDisplay();
+            }
+        }
+
+        function resetGame() {
+            selectedNumbers.clear();
+            const cells = document.querySelectorAll('.number-cell');
+            cells.forEach(cell => {
+                cell.classList.remove('deleted');
+            });
+            updateDisplay();
+        }
+
+        // Inicijalizuj igru kada se stranica učita
+        document.addEventListener('DOMContentLoaded', function() {
+            createBingoGrid();
+            updateDisplay();
+        });
+    </script>
+</body>
+</html>
